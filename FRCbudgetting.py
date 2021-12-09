@@ -10,9 +10,6 @@ st.set_page_config(layout='wide')
 user_dict={'mayor' : "Mayor",'planner':'Planner','em':'Emergency Manager','cso':'Community Service','wr':'Waterfront Resident','F':'Farmer','LD':'Land Developer','LEF':'Large Engineering Firm'}
 user_dict_inv= {v:k for k,v in user_dict.items()}
 
-now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-st.write(now)
 
 measure_dict_structural = {'Dry or Wet Proof Building':'P1','Elevate Buildings':'P2','Green Dike':'P3','Traditional Dike':'P4','Wetland':'P5','Wetland Protection':'P6','Road and Bridge Relocation':'P7','Road and Bridge Maintenace':'P8'}
 measure_dict_social = {'Managed Retreat/Property Buyouts':'S1','Flood Bylaw':'S2','Flood Forecasting and Warning':'S3','Community Awareness':'S4','Emergency Response Planning':'S5','Post-Flood Recovery Resources': 'S6','Flood Insurance':'S7','Post-Flood Recovery Resources':'S8'}
