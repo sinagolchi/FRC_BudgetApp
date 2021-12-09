@@ -17,7 +17,17 @@ with st.sidebar:
     st.selectbox(label='FRC Board number',options=[1,2,3,4,5])
     user_id = st.text_input('Your unique FRC ID')
 
-st.header("Your role is: " + str(user_dict[user_id]))
+
+try:
+    st.header("Your role is: " + str(user_dict[user_id]))
+except:
+    if user_id == '':
+        st.warning('You are not logged in! Please login from the sidebar on the left.\n'
+                   'If sidebar is hidden reveal it via the arrow on the upper left of this page')
+        st.stop()
+    else:
+        st.error('Your unique ID is incorrect, please contact FRC admins for help!')
+        st.stop()
 
 roles = ['mayor','planner','em','cso','wr','F','LD','LEF']
 other_roles = [x for x in roles if x != user_id]
