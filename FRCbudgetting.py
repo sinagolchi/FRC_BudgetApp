@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 import time
-from stqdm import stqdm
+
 st.set_page_config(layout='wide')
 user_dict={'mayor' : "Mayor",'planner':'Planner','em':'Emergency Manager','cso':'Community Service','wr':'Waterfront Resident','F':'Farmer','LD':'Land Developer','LEF':'Large Engineering Firm'}
 user_dict_inv= {v:k for k,v in user_dict.items()}
