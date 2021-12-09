@@ -2,10 +2,17 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 import time
+import datetime
+
+
 
 st.set_page_config(layout='wide')
 user_dict={'mayor' : "Mayor",'planner':'Planner','em':'Emergency Manager','cso':'Community Service','wr':'Waterfront Resident','F':'Farmer','LD':'Land Developer','LEF':'Large Engineering Firm'}
 user_dict_inv= {v:k for k,v in user_dict.items()}
+
+now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+st.write(now)
 
 measure_dict_structural = {'Dry or Wet Proof Building':'P1','Elevate Buildings':'P2','Green Dike':'P3','Traditional Dike':'P4','Wetland':'P5','Wetland Protection':'P6','Road and Bridge Relocation':'P7','Road and Bridge Maintenace':'P8'}
 measure_dict_social = {'Managed Retreat/Property Buyouts':'S1','Flood Bylaw':'S2','Flood Forecasting and Warning':'S3','Community Awareness':'S4','Emergency Response Planning':'S5','Post-Flood Recovery Resources': 'S6','Flood Insurance':'S7','Post-Flood Recovery Resources':'S8'}
@@ -69,11 +76,18 @@ for col, role in zip(metric_cols,other_roles):
 
 update_bid_measure = ("UPDATE measures SET person_bid = %s, total_bid = total_bid + %s WHERE measure_ID=%s;")
 update_bid_role =  ("UPDATE frcbudget1 SET r1_measure = %s, r1_bid = %s WHERE role=%s;")
+log_bid = ("INSERT INTO measure_log VALUES (NOW(),%s,%s,%s,%s);")
+
+st.write(df.loc[user_id,'r1_measure'])
 
 def make_bid_func(measure, amount, dict):
     cur = conn.cursor()
     cur.execute(update_bid_role,(measure,amount,user_id))
     cur.execute(update_bid_measure,(user_id,amount,dict[measure]))
+    if df.loc[user_id,'r1_measure'] == None:
+        cur.execute(log_bid,('New',user_dict[user_id],amount,measure))
+    else:
+        cur.execute(log_bid,('Change', user_dict[user_id], amount, measure))
     conn.commit()
     with st.spinner('Registering your bid'):
         time.sleep(3)
@@ -123,6 +137,7 @@ for measure in all_measures.keys():
 
 update_budget = ("UPDATE frcbudget1 SET cb = %s WHERE role=%s;")
 update_delta =  ("UPDATE frcbudget1 SET delta = %s WHERE role=%s;")
+log_transaction = ("INSERT INTO payment VALUES (NOW(),%s,%s,%s);")
 
 def money_transfer(amount,r_party):
     curA = conn.cursor()
@@ -130,6 +145,7 @@ def money_transfer(amount,r_party):
     curA.execute(update_delta,(-amount,user_id))
     curA.execute(update_budget,(int(df.loc[user_dict_inv[r_party],'cb']+amount),user_dict_inv[r_party]))
     curA.execute(update_delta,(+amount,user_dict_inv[r_party]))
+    curA.execute(log_transaction,(user_dict[user_id],amount,r_party))
     conn.commit()
 
 
