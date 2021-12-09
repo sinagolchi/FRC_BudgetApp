@@ -116,7 +116,7 @@ with col2_f:
   
 with col3_f:
     st.metric(label='Your budget if bid sucessful', value=int(df.loc[user_id,'cb']-bid_amount),delta=-bid_amount)
-    make_bid = st.button("Make the bid")
+    make_bid = st.button("Make/Change the bid")
 
 if make_bid:
     make_bid_func(bid_measure,bid_amount,all_measures)
