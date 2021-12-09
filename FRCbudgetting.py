@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import mysql.connector
 import psycopg2
 import time
 from stqdm import stqdm
