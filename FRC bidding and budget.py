@@ -13,7 +13,6 @@ measure_dict_social = {'Managed Retreat/Property Buyouts':'S1','Flood Bylaw':'S2
 all_measures = {**measure_dict_structural,**measure_dict_social}
 all_measures_inv = {v:k for k,v in all_measures.items()}
 st.title('FRC budget and measure management')
-st.write(all_measures_inv)
 with st.sidebar:
     st.write('Please Login below:')
     st.selectbox(label='FRC Board number',options=[1,2,3,4,5])
