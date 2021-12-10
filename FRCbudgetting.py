@@ -3,6 +3,7 @@ import pandas as pd
 import psycopg2
 import time
 import datetime
+import pytz
 
 
 
@@ -20,7 +21,7 @@ with st.sidebar:
     st.write('Please Login below:')
     st.selectbox(label='FRC Board number',options=[1,2,3,4,5])
     user_id = st.text_input('Your unique FRC ID')
-
+    st.radio(label='Game round', options=[1,2,3])
 
 try:
     st.header("Your role is: " + str(user_dict[user_id]))
@@ -165,7 +166,30 @@ if transfer:
     time.sleep(3)
     st.experimental_rerun()
 
-    
+st.header('Summary')
+with st.expander("Bidding summary"):
+    df_m_log = pd.read_sql("SELECT * from measure_log;",conn)
+    est = pytz.timezone('EST')
+    df_m_log = df_m_log.rename(
+        columns={'datetime': 'Timestamp', 'bid_type': 'Type of bid', 'person_biding': 'Role of bidder',
+                 'amount': 'Amount of bid', 'measure': 'Measure'})
+    if not df_m_log.empty:
+        df_m_log['Timestamp'] = df_m_log['Timestamp'].dt.tz_convert('EST').dt.strftime('%B %d, %Y, %r')
+        st.dataframe(df_m_log)
+
+
+with st.expander("Transaction summary"):
+    df_p_log = pd.read_sql("SELECT * from payment;", conn)
+    est = pytz.timezone('EST')
+    df_p_log = df_p_log.rename(
+        columns={'datetime': 'Timestamp', 'from_user': 'Sender', 'amount': 'Transaction total',
+                 'to_user': 'Receiving party'})
+    if not df_p_log.empty:
+        df_p_log['Timestamp'] = df_p_log['Timestamp'].dt.tz_convert('EST').dt.strftime('%B %d, %Y, %r')
+        st.dataframe(df_p_log)
+
+
+
 
 
 
