@@ -13,18 +13,19 @@ user_dict_inv= {v:k for k,v in user_dict.items()}
 
 
 measure_dict_structural = {'Dry or Wet Proof Building':'P1','Elevate Buildings':'P2','Green Dike':'P3','Traditional Dike':'P4','Wetland':'P5','Wetland Protection':'P6','Road and Bridge Relocation':'P7','Road and Bridge Maintenace':'P8'}
-measure_dict_social = {'Managed Retreat/Property Buyouts':'S1','Flood Bylaw':'S2','Flood Forecasting and Warning':'S3','Community Awareness':'S4','Emergency Response Planning':'S5','Post-Flood Recovery Resources': 'S6','Flood Insurance':'S7','Post-Flood Recovery Resources':'S8'}
+measure_dict_social = {'Managed Retreat/Property Buyouts':'S1','Flood Bylaw':'S2','Flood Forecasting and Warning':'S3','Community Awareness':'S4','Emergency Response Planning':'S5','Post-Flood Recovery Resources': 'S6','Post-Flood Recovery Resources':'S8'}
 all_measures = {**measure_dict_structural,**measure_dict_social}
 all_measures_inv = {v:k for k,v in all_measures.items()}
 st.title('FRC budget and measure management')
 with st.sidebar:
     st.write('Please Login below:')
-    st.selectbox(label='FRC Board number',options=[1,2,3,4,5])
+    board = st.selectbox(label='FRC Board number',options=[1,2,3,4,5])
     user_id = st.text_input('Your unique FRC ID')
-    st.radio(label='Game round', options=[1,2,3])
+    round = st.radio(label='Game round', options=[1,2,3])
+
 
 try:
-    st.header("Your role is: " + str(user_dict[user_id]))
+    st.header("Your role is: " + str(user_dict[user_id]) + " on board " + str(board))
 except:
     if user_id == '':
         st.warning('You are not logged in! Please login from the sidebar on the left.\n'
@@ -73,14 +74,12 @@ for col, role in zip(metric_cols,other_roles):
         st.metric(label=user_dict[role],value='$'+str(df.loc[role,'cb']),delta=int(df.loc[role,'delta']))
 
 update_bid_measure = ("UPDATE measures SET person_bid = %s, total_bid = total_bid + %s WHERE measure_ID=%s;")
-update_bid_role =  ("UPDATE frcbudget1 SET r1_measure = %s, r1_bid = %s WHERE role=%s;")
+update_bid_role =  ("UPDATE frcbudget1 SET r%s_measure = %s, r%s_bid = %s WHERE role=%s;")
 log_bid = ("INSERT INTO measure_log VALUES (NOW(),%s,%s,%s,%s);")
-
-st.write(df.loc[user_id,'r1_measure'])
 
 def make_bid_func(measure, amount, dict):
     cur = conn.cursor()
-    cur.execute(update_bid_role,(measure,amount,user_id))
+    cur.execute(update_bid_role,(round,measure,round,amount,user_id))
     cur.execute(update_bid_measure,(user_id,amount,dict[measure]))
     if df.loc[user_id,'r1_measure'] == None:
         cur.execute(log_bid,('New',user_dict[user_id],amount,measure))
@@ -93,7 +92,7 @@ def make_bid_func(measure, amount, dict):
     time.sleep(2)
     st.experimental_rerun()
 
-
+st.markdown("""___""")
 st.header('Biding on features')
 col1_f, col2_f, col3_f = st.columns(3)
 
@@ -113,7 +112,7 @@ with col2_f:
         st.markdown('### The cost is covered by taxes')
   
 with col3_f:
-    st.metric(label='Your budget if bid sucessful', value=int(df.loc[user_id,'cb']-bid_amount),delta=-bid_amount)
+    st.metric(label='Your budget if bid successful', value=int(df.loc[user_id,'cb']-bid_amount),delta=-bid_amount)
     make_bid = st.button("Make/Change the bid")
 
 if make_bid:
@@ -121,17 +120,17 @@ if make_bid:
 
 st.subheader('Measures suggested')
 for measure in all_measures.keys():
-    if measure in df['r1_measure'].to_list():
+    if measure in df['r'+str(round)+'_measure'].to_list():
 
 
         col1, col2 = st.columns([1,3])
         with col1:
-            st.metric(label=measure,value=str(sum([int(i) for i in df[df['r1_measure'] == measure]['r1_bid'].to_list()]))+r"/"+str(df_m.loc[all_measures[measure],'cost']))
+            st.metric(label=measure,value=str(sum([int(i) for i in df[df['r'+str(round)+'_measure'] == measure]['r'+str(round)+'_bid'].to_list()]))+r"/"+str(df_m.loc[all_measures[measure],'cost']))
         with col2:
-            biders = list(df[df['r1_measure'] == measure].index)
-            amounts = df[df['r1_measure'] == measure]['r1_bid'].to_list()
+            biders = list(df[df['r'+str(round)+'_measure'] == measure].index)
+            amounts = df[df['r'+str(round)+'_measure'] == measure]['r'+str(round)+'_bid'].to_list()
             st.caption('Biders: ' + ',  '.join([user_dict[p] + ': $'+ str(b)  for p,b in zip(biders,amounts)]))
-            st.progress(int(sum([int(i) for i in df[df['r1_measure'] == measure]['r1_bid'].to_list()])/df_m.loc[all_measures[measure],'cost']*100))
+            st.progress(int(sum([int(i) for i in df[df['r'+str(round)+'_measure'] == measure]['r'+str(round)+'_bid'].to_list()])/df_m.loc[all_measures[measure],'cost']*100))
 
 update_budget = ("UPDATE frcbudget1 SET cb = %s WHERE role=%s;")
 update_delta =  ("UPDATE frcbudget1 SET delta = %s WHERE role=%s;")
@@ -146,8 +145,8 @@ def money_transfer(amount,r_party):
     curA.execute(log_transaction,(user_dict[user_id],amount,r_party))
     conn.commit()
 
-
-st.subheader("Money Transfer")
+st.markdown("""___""")
+st.header("Money Transfer")
 col1 , col2, col3, col4 = st.columns(4)
 with col1:
     t_amount = st.number_input(value=0, label='Budget to transfer',min_value=0)
@@ -188,7 +187,48 @@ with st.expander("Transaction summary"):
         df_p_log['Timestamp'] = df_p_log['Timestamp'].dt.tz_convert('EST').dt.strftime('%B %d, %Y, %r')
         st.dataframe(df_p_log)
 
+insurance_update = ("UPDATE frcbudget1 SET r%s_insurance = %s WHERE role=%s;")
+#function for buying insurance
+def insure_me(user, action):
+    cur = conn.cursor()
+    cur.execute(insurance_update,(round,action,user))
+    if action:
+        cur.execute(update_budget, (int(df.loc[user_id, 'cb']) - 1, user_id))
+        cur.execute(update_delta, (-1, user_id))
+        conn.commit()
+        with st.spinner('Preparing your policy'):
+            time.sleep(2)
+        st.success('You are insured :)')
+        time.sleep(2)
+        st.experimental_rerun()
+    else:
+        cur.execute(update_budget, (int(df.loc[user_id, 'cb']) + 1, user_id))
+        cur.execute(update_delta, (+1, user_id))
+        conn.commit()
+        with st.spinner('Cancelling your policy'):
+            time.sleep(2)
+        st.success('Your policy was canceled successfully')
+        time.sleep(2)
+        st.experimental_rerun()
 
+# Insurance section sidebar
+with st.sidebar:
+    st.header('Flood insurance')
+    if not df.loc[user_id,'r'+str(round)+'_insurance']:
+        st.warning('You are not insured for round ' + str(round))
+        st.subheader('Would you like to purchase insurance?')
+        col1, col2 = st.columns(2)
+        with col1:
+            insure = st.button(label='Buy insurance')
+        with col2:
+            st.metric(label='Budget preview', value=int(df.loc[user_id,'cb']-1),delta=-1)
+        if insure:
+            insure_me(user_id, True)
+    else:
+        st.success('your property is insured for round ' + str(round))
+        cancel_policy = st.button(label='Cancel policy')
+        if cancel_policy:
+            insure_me(user_id,False)
 
 
 
